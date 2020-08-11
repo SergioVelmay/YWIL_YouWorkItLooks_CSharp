@@ -1,2 +1,2 @@
-# YWIL_YouWorkItLooks
-Computer vision project to detect manufacturing steps for industrial production chains.
+# YWIL You Work, It Looks.
+A computer vision project to detect manufacturing steps for industrial production chains.
