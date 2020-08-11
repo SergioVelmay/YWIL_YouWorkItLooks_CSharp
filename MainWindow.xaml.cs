@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,6 +34,9 @@ namespace YWIL_YouWorkItLooks
 
         private const bool capturingFlag = true;
 
+        private string lastFolder = "C_ClassificationMultiClass";
+        private string lastFramePath;
+
         private Action<VideoFrame> UpdateImage(Image image)
         {
             WriteableBitmap bitmap = image.Source as WriteableBitmap;
@@ -61,6 +65,25 @@ namespace YWIL_YouWorkItLooks
                 System.IO.Stream stream = StreamFromBitmapSource(scaled);
 
                 SaveStreamAsPngFile(stream);
+
+
+                string workingDir = @$"{System.IO.Directory.GetCurrentDirectory()}\{lastFolder}";
+                ProcessStartInfo startInfo = new ProcessStartInfo();
+                startInfo.WorkingDirectory = workingDir;
+                startInfo.FileName = "cmd.exe";
+                startInfo.Arguments = $"/C py script.py -i {lastFramePath}";
+                startInfo.UseShellExecute = false;
+                startInfo.RedirectStandardOutput = true;
+                startInfo.CreateNoWindow = true;
+
+                using (Process process = Process.Start(startInfo))
+                {
+                    using (System.IO.StreamReader reader = process.StandardOutput)
+                    {
+                        string result = reader.ReadToEnd();
+                        Console.Write(result);
+                    }
+                }
             }
         }
 
@@ -95,6 +118,8 @@ namespace YWIL_YouWorkItLooks
             }
 
             string filePath = System.IO.Path.Combine(folderPath, fileName);
+
+            lastFramePath = filePath;
 
             using (System.IO.FileStream outputFileStream = new System.IO.FileStream(filePath, System.IO.FileMode.Create))
             {
