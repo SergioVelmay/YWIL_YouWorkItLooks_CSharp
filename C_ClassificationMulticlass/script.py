@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
 import sys
 import os
 from argparse import ArgumentParser, SUPPRESS
@@ -8,6 +7,7 @@ import cv2
 import numpy as np
 import json
 from openvino.inference_engine import IECore
+import cv2
 
 def build_argparser():
     parser = ArgumentParser(add_help=False)
@@ -67,7 +67,7 @@ def main():
 
     data = json.dumps(result.__dict__, indent=4)
 
-    return data
+    print(data)
 
 if __name__ == '__main__':
     sys.exit(main() or 0)
