@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
 import sys
 import os
 from argparse import ArgumentParser, SUPPRESS
@@ -70,7 +69,7 @@ def main():
 
     data = json.dumps([obj.__dict__ for obj in results], indent=4)
 
-    return data
+    print(data)
 
 if __name__ == '__main__':
     sys.exit(main() or 0)
