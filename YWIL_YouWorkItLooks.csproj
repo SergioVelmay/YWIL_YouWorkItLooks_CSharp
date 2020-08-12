@@ -12,37 +12,37 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="A_ClassificationMultilabel\model.bin">
+    <None Update="ClassificationMultilabel\model.bin">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="A_ClassificationMultilabel\model.labels">
+    <None Update="ClassificationMultilabel\model.labels">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="A_ClassificationMultilabel\model.xml">
+    <None Update="ClassificationMultilabel\model.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="A_ClassificationMultilabel\script.py">
+    <None Update="ClassificationMultilabel\script.py">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="B_ObjectDetection\model.bin">
+    <None Update="ObjectDetection\model.bin">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="B_ObjectDetection\model.labels">
+    <None Update="ObjectDetection\model.labels">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="B_ObjectDetection\model.xml">
+    <None Update="ObjectDetection\model.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="C_ClassificationMulticlass\model.bin">
+    <None Update="ClassificationMulticlass\model.bin">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="C_ClassificationMulticlass\model.labels">
+    <None Update="ClassificationMulticlass\model.labels">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="C_ClassificationMulticlass\model.xml">
+    <None Update="ClassificationMulticlass\model.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="C_ClassificationMulticlass\script.py">
+    <None Update="ClassificationMulticlass\script.py">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
