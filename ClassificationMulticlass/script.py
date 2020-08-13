@@ -7,7 +7,6 @@ import cv2
 import numpy as np
 import json
 from openvino.inference_engine import IECore
-import cv2
 
 def build_argparser():
     parser = ArgumentParser(add_help=False)
@@ -57,15 +56,18 @@ def main():
 
     with open(model_labels, 'r') as f:
         labels = [x.split(sep=' ', maxsplit=1)[-1].strip() for x in f]
+
+    results = list()
     
     for i, probs in enumerate(res):
         probs = np.squeeze(probs)
         top_ind = np.argsort(probs)[-number_top:][::-1]
         for id in top_ind:
-            prob = '{:.3f}'.format(probs[id] * 100)
+            prob = '{:.1f}'.format(probs[id] * 100)
             result = Result(labels[id], prob)
+            results.append(result)
 
-    data = json.dumps(result.__dict__, indent=4)
+    data = json.dumps([obj.__dict__ for obj in results], indent=4)
 
     print(data)
 

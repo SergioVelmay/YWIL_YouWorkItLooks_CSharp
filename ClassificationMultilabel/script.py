@@ -29,6 +29,7 @@ def main():
     model_bin = model_path + '.bin'
     model_labels = model_path + '.labels'
     device_name = 'CPU'
+    prob_threshold = 0.5
     number_top = 2
 
     inference_engine = IECore()
@@ -63,9 +64,10 @@ def main():
         probs = np.squeeze(probs)
         top_ind = np.argsort(probs)[-number_top:][::-1]
         for id in top_ind:
-            prob = '{:.3f}'.format(probs[id] * 100)
-            result = Result(labels[id], prob)
-            results.append(result)
+            if probs[id] > prob_threshold:
+                prob = '{:.1f}'.format(probs[id] * 100)
+                result = Result(labels[id], prob)
+                results.append(result)
 
     data = json.dumps([obj.__dict__ for obj in results], indent=4)
 
