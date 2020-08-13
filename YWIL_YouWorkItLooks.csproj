@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Intel.RealSenseWithNativeDll" Version="2.36.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,13 +25,16 @@
     <None Update="ClassificationMultilabel\script.py">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="ObjectDetection\model.bin">
+    <None Update="ObjectDetection\model.onnx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="ObjectDetection\model.labels">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="ObjectDetection\model.xml">
+    <None Update="ObjectDetection\object_detection.py">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ObjectDetection\script.py">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="ClassificationMulticlass\model.bin">
