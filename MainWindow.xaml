@@ -6,8 +6,16 @@
         xmlns:local="clr-namespace:YWIL_YouWorkItLooks"
         mc:Ignorable="d" WindowStartupLocation="CenterOwner"
         Closing="ControlClosing"
-        Title="Intel RealSense Software-Device .NET Example" Height="720" Width="1280" x:Name="control">
+        Title="Intel RealSense Software-Device .NET Example" Height="780" Width="1280" x:Name="control">
     <Grid>
-        <Image x:Name="colorImage" Grid.Column="0" />
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" x:Name="helpMessageTextBlock" HorizontalAlignment="Center" Height="50" Width="1280" Background="Black" Foreground="White" FontSize="21" Padding="10" TextAlignment="Center"></TextBlock>
+        <Grid Grid.Row="1" >
+            <Image x:Name="colorRealSenseImage" Height="720" Width="1280"/>
+            <Canvas x:Name="objectDetectionCanvas" Height="720" Width="1280"/>
+        </Grid>
     </Grid>
 </Window>
