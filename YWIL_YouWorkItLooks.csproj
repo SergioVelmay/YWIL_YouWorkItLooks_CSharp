@@ -8,8 +8,54 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\Step0.jpg" />
+    <None Remove="Resources\Step1.jpg" />
+    <None Remove="Resources\Step2.jpg" />
+    <None Remove="Resources\Step3.jpg" />
+    <None Remove="Resources\Step4.jpg" />
+    <None Remove="Resources\Step5.jpg" />
+    <None Remove="Resources\Step6.jpg" />
+    <None Remove="Resources\Step7.jpg" />
+    <None Remove="Resources\StepNo.png" />
+    <None Remove="Resources\StepYes.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Intel.RealSenseWithNativeDll" Version="2.36.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Step0.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\Step1.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\Step2.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\Step3.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\Step4.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\Step5.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\Step6.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\Step7.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\StepNo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\StepYes.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
   <ItemGroup>
