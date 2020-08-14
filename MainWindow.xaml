@@ -6,16 +6,37 @@
         xmlns:local="clr-namespace:YWIL_YouWorkItLooks"
         mc:Ignorable="d" WindowStartupLocation="CenterOwner"
         Closing="ControlClosing"
-        Title="Intel RealSense Software-Device .NET Example" Height="780" Width="1280" x:Name="control">
+        Title="YWIL - You Work, It Looks." Height="517" Width="974" x:Name="control">
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0" x:Name="helpMessageTextBlock" HorizontalAlignment="Center" Height="50" Width="1280" Background="Black" Foreground="White" FontSize="21" Padding="10" TextAlignment="Center"></TextBlock>
-        <Grid Grid.Row="1" >
-            <Image x:Name="colorRealSenseImage" Height="720" Width="1280"/>
-            <Canvas x:Name="objectDetectionCanvas" Height="720" Width="1280"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="640" />
+            <ColumnDefinition Width="320" />
+        </Grid.ColumnDefinitions>
+        <Grid Grid.Column="0" >
+            <Image x:Name="colorRealSenseImage" Height="480" Width="640"/>
+            <Canvas x:Name="objectDetectionCanvas" Height="480" Width="640"/>
         </Grid>
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="60" />
+                <RowDefinition Height="160" />
+                <RowDefinition Height="220" />
+                <RowDefinition Height="40" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" x:Name="helpMessageTextBlock" Height="60" Width="320" Background="Black" Foreground="White" FontSize="21" Padding="0 15 " TextAlignment="Center" TextWrapping="Wrap"></TextBlock>
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="160" />
+                    <ColumnDefinition Width="160" />
+                </Grid.ColumnDefinitions>
+                <Image Grid.Column="0" x:Name="stepChekingImage" Height="120" Width="120" Margin="20"/>
+                <Image Grid.Column="1" x:Name="stepReferenceImage" Height="160" Width="160"/>
+            </Grid>
+            <TextBlock Grid.Row="2" x:Name="stepInfoTextBlock" Width="320" Foreground="Black" FontSize="18" Padding="18" TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"></TextBlock>
+            <TextBlock Grid.Row="3" x:Name="inferenceTextBlock" Height="40" Width="320" Background="Black" Foreground="White" FontSize="18" Padding="0 6" TextAlignment="Center" TextWrapping="Wrap"></TextBlock>
+        </Grid>
+        
+        
+        
     </Grid>
 </Window>
