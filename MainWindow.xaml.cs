@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -20,19 +21,19 @@ namespace YWIL_YouWorkItLooks
 
         private readonly CancellationTokenSource tokenSource = new CancellationTokenSource();
 
-        private int frameRate = 30;
+        const int frameRate = 30;
+        const int imageEach = 30;
 
-        private int frameCount = 0;
+        const int frameWidth = 640;
+        const int frameHeight = 480;
 
-        private int imageEach = 15;
+        private Int32Rect rect = new Int32Rect(0, 0, frameWidth, frameHeight);
 
-        private Int32Rect rect = new Int32Rect(0, 0, 1280, 720);
+        private int cropLeft = (frameWidth - frameHeight) / 2;
 
-        private int cropLeft = (1280 - 720) / 2;
+        private Int32Rect region = new Int32Rect((frameWidth - frameHeight) / 2, 0, frameHeight, frameHeight);
 
-        private Int32Rect region = new Int32Rect((1280 - 720) / 2, 0, 720, 720);
-
-        private double scale = 416d / 720d;
+        private double scale = 416d / frameHeight;
 
         private const bool capturingFlag = false;
 
@@ -67,16 +68,43 @@ namespace YWIL_YouWorkItLooks
 
         private List<string> multiclassLabels = new List<string>()
         {
+            "Step7.start",
             "Step7.true",
             "Step7.false.A",
             "Step7.false.B"
         };
 
-        private int currentModel = 0; // 0 --> 01234 / 1 --> 56 / 2 --> 7
+        private List<string> helpMessages = new List<string>()
+        {
+            "Place all green parts",
+            "Place the orange part",
+            "Place the gear on top"
+        };
 
-        private int currentStep = 0;
+        private List<string> errorMessages = new List<string>()
+        {
+            "Remove the marked part"
+        };
 
+        private List<Uri> stepCheckingUris = new List<Uri>()
+        {
+            new Uri("pack://application:,,,/Resources/StepNo.png"),
+            new Uri("pack://application:,,,/Resources/StepYes.png")
+        };
+
+        private Uri GetImageStepUri(int step)
+        {
+            return new Uri($"pack://application:,,,/Resources/Step{step}.jpg");
+        }
+
+        private int frameCount = 0;
         private string lastFramePath;
+
+        private int currentModel = 1; // 0 --> 01234 / 1 --> 56 / 2 --> 7
+        private int currentStep = 5;
+
+        private int currentHelp = 0;
+        private int currentError = 0;
 
         private Action<VideoFrame> UpdateImage(Image image)
         {
@@ -117,32 +145,49 @@ namespace YWIL_YouWorkItLooks
             {
                 case 0:
                     List<Classification> multilabel = JsonConvert.DeserializeObject<List<Classification>>(result);
-                    ShowHelpMessage(multilabel, inferenceTime);
+                    ShowWindowsMessages(multilabel, inferenceTime);
                     break;
                 case 1:
                     List<Detection> objectDetection = JsonConvert.DeserializeObject<List<Detection>>(result);
-                    ShowHelpMessage(objectDetection, inferenceTime);
-                    ShowAllDetectionBoxes(objectDetection);
+                    ShowAllDetectionBoxes(objectDetection, inferenceTime);
                     break;
                 case 2:
+                    ClearDetectionBoxes();
                     List<Classification> multiclass = JsonConvert.DeserializeObject<List<Classification>>(result);
-                    ShowHelpMessage(multiclass, inferenceTime);
+                    ShowWindowsMessages(multiclass, inferenceTime);
                     break;
                 default:
                     break;
             }
+
+            stepReferenceImage.Source = new BitmapImage(GetImageStepUri(currentStep));
         }
 
-        private void ShowHelpMessage<T>(List<T> items, int milliseconds) where T : Classification
+        private void ShowWindowsMessages<T>(List<T> items, int milliseconds, bool error = false) where T : Classification
         {
-            string message = "Time: " + milliseconds + ". ";
+            string helpMessage = string.Empty;
+
+            string stepInfo = "Current step detections:" + Environment.NewLine;
 
             foreach (T item in items)
             {
-                message += " " + item.PredictionToString() + " ";
+                stepInfo += Environment.NewLine + " " + item.PredictionToString();
             }
 
-            helpMessageTextBlock.Text = message;
+            if (error)
+            {
+                helpMessage += errorMessages[currentError].ToUpper();
+            }
+            else
+            {
+                helpMessage += helpMessages[currentHelp].ToUpper();
+            }
+
+            helpMessageTextBlock.Text = helpMessage;
+
+            stepInfoTextBlock.Text = stepInfo;
+
+            inferenceTextBlock.Text = "Last inference took " + milliseconds + "ms";
         }
 
         private void ClearDetectionBoxes()
@@ -150,80 +195,88 @@ namespace YWIL_YouWorkItLooks
             objectDetectionCanvas.Children.Clear();
         }
 
-        private void ShowAllDetectionBoxes(IEnumerable<Detection> detectedObjects)
+        private void ShowAllDetectionBoxes(IEnumerable<Detection> detectedObjects, int milliseconds)
         {
             ClearDetectionBoxes();
 
-            foreach (Detection detection in detectedObjects)
+            IEnumerable<Detection> selectedDetections = detectedObjects.Where(x => x.Label.Contains(currentStep.ToString()));
+
+            bool error = false;
+
+            if (selectedDetections.Select(x => x.Label).Contains("Step5.error"))
             {
-                ShowObjectDetectionBox(detection);
+                stepChekingImage.Source = new BitmapImage(stepCheckingUris[0]);
+                error = true;
             }
+            else
+            {
+                stepChekingImage.Source = new BitmapImage(stepCheckingUris[1]);
+            }
+
+            if (error)
+            {
+                ShowObjectDetectionBox(selectedDetections.Where(x => x.Label.Contains("error")).FirstOrDefault());
+            }
+            else
+            {
+                foreach (Detection detection in selectedDetections)
+                {
+                    ShowObjectDetectionBox(detection);
+                }
+            }
+
+            if (selectedDetections.Count(x => x.Label.Contains("Step5.part")) > 3)
+            {
+                currentStep++;
+                currentHelp++;
+            }
+
+            if (selectedDetections.Select(x => x.Label).Contains("Step6.part"))
+            {
+                currentStep++;
+                currentModel++;
+                currentHelp++;
+            }
+
+            ShowWindowsMessages(detectedObjects.ToList(), milliseconds, error);
         }
 
         private void ShowObjectDetectionBox(Detection detectedObject)
         {
-            double canvasSide = 720;
+            double canvasSide = 480;
 
             float probability = float.Parse(detectedObject.Probability);
 
             Color color;
+            int thick;
 
-            //if (detectedObject.TagName.Contains("_MAL"))
-            //{
-            //    color = Colors.Red;
-            //}
-            //else
-            //{
-            if (probability > 0.90)
-                color = Colors.Lime;
-            else if (probability > 0.80)
-                color = Colors.LawnGreen;
-            else if (probability > 0.70)
-                color = Colors.Yellow;
-            else if (probability > 0.60)
-                color = Colors.Orange;
+            if (detectedObject.Label.Contains("error"))
+            {
+                color = Colors.OrangeRed;
+                thick = 6;
+            }
+            else if (detectedObject.Label.Contains("hole"))
+            {
+                color = Colors.White;
+                thick = 2;
+            }
             else
-                color = Colors.Red;
-            //}
+            { 
+                color = Colors.Lime;
+                thick = 4;
+            }
 
             objectDetectionCanvas.Children.Add(
                 new Border
                 {
                     BorderBrush = new SolidColorBrush(color),
-                    BorderThickness = new Thickness(2),
+                    BorderThickness = new Thickness(thick),
                     Margin = new Thickness(detectedObject.Box.Left * canvasSide + cropLeft,
                                             detectedObject.Box.Top * canvasSide, 0, 0),
                     Width = detectedObject.Box.Width * canvasSide,
                     Height = detectedObject.Box.Height * canvasSide,
                 }
             );
-
-            //objectDetectionCanvas.Children.Add(
-            //    new Border
-            //    {
-            //        Height = 27,
-            //        FlowDirection = FlowDirection.LeftToRight,
-            //        HorizontalAlignment = HorizontalAlignment.Left,
-            //        Margin = new Thickness(detectedObject.Box.Left * canvasSide + cropLeft,
-            //                                detectedObject.Box.Top * canvasSide - 25, 0, 0),
-
-            //        Child = new Border
-            //        {
-            //            Background = new SolidColorBrush(color),
-            //            HorizontalAlignment = HorizontalAlignment.Left,
-            //            VerticalAlignment = VerticalAlignment.Bottom,
-            //            Child =
-            //                new TextBlock
-            //                {
-            //                    Foreground = new SolidColorBrush(Colors.Black),
-            //                    Text = $"{detectedObject.Label} {detectedObject.Probability}%",
-            //                    FontSize = 9,
-            //                    FontWeight = FontWeight.FromOpenTypeWeight(500),
-            //                    Margin = new Thickness(8, 2, 8, 2)
-            //                }
-            //        }
-            //    }
-            //);
         }
 
         private async Task<string> ModelInference(string modelFolder)
@@ -302,6 +355,8 @@ namespace YWIL_YouWorkItLooks
         {
             InitializeComponent();
 
+            stepReferenceImage.Source = new BitmapImage(GetImageStepUri(4));
+
             try
             {
                 Action<VideoFrame> updateColor;
@@ -310,7 +365,7 @@ namespace YWIL_YouWorkItLooks
 
                 Config config = new Config();
 
-                config.EnableStream(Stream.Color, 1280, 720, Format.Rgb8, 30);
+                config.EnableStream(Stream.Color, frameWidth, frameHeight, Format.Rgb8, frameRate);
 
                 PipelineProfile profile = pipeline.Start(config);
 
@@ -325,8 +380,8 @@ namespace YWIL_YouWorkItLooks
                     type = Stream.Color,
                     index = 0,
                     uid = 101,
-                    width = 1280,
-                    height = 720,
+                    width = frameWidth,
+                    height = frameHeight,
                     fps = frameRate,
                     bpp = 3,
                     format = Format.Rgb8,
