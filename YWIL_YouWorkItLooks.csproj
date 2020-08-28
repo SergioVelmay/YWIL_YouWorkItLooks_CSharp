@@ -16,6 +16,7 @@
     <None Remove="Resources\Step5.jpg" />
     <None Remove="Resources\Step6.jpg" />
     <None Remove="Resources\Step7.jpg" />
+    <None Remove="Resources\StepArrow.png" />
     <None Remove="Resources\StepNo.png" />
     <None Remove="Resources\StepYes.png" />
   </ItemGroup>
@@ -48,6 +49,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Resources\Step7.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\StepArrow.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Resources\StepNo.png">
