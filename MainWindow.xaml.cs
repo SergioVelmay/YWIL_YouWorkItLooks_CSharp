@@ -12,6 +12,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Intel.RealSense;
 using Newtonsoft.Json;
+using YWIL_YouWorkItLooks.Steps;
+using YWIL_YouWorkItLooks.Steps.Models;
 
 namespace YWIL_YouWorkItLooks
 {
@@ -29,82 +31,23 @@ namespace YWIL_YouWorkItLooks
 
         private Int32Rect rect = new Int32Rect(0, 0, frameWidth, frameHeight);
 
-        private int cropLeft = (frameWidth - frameHeight) / 2;
+        private readonly int cropLeft = (frameWidth - frameHeight) / 2;
 
         private Int32Rect region = new Int32Rect((frameWidth - frameHeight) / 2, 0, frameHeight, frameHeight);
 
-        private double scale = 416d / frameHeight;
+        private readonly double scale = 416d / frameHeight;
 
         private const bool capturingFlag = false;
 
-        private List<string> modelFolders = new List<string>()
-        {
-            "ClassificationMultilabel",
-            "ObjectDetection",
-            "ClassificationMulticlass"
-        };
-
-        private List<string> multilabelLabels = new List<string>()
-        {
-            "Step0", 
-            "Step1", 
-            "Step2", 
-            "Step3", 
-            "true", 
-            "false", 
-            "Step4", 
-            "front", 
-            "back"
-        };
-
-        private List<string> objectDetectionLabels = new List<string>()
-        {
-            "Step5.hole",
-            "Step5.part",
-            "Step5.error",
-            "Step6.hole",
-            "Step6.part"
-        };
-
-        private List<string> multiclassLabels = new List<string>()
-        {
-            "Step7.start",
-            "Step7.true",
-            "Step7.false.A",
-            "Step7.false.B"
-        };
-
-        private List<string> helpMessages = new List<string>()
-        {
-            "Place all green parts",
-            "Place the orange part",
-            "Place the gear on top"
-        };
-
-        private List<string> errorMessages = new List<string>()
-        {
-            "Remove the marked part"
-        };
-
-        private List<Uri> stepCheckingUris = new List<Uri>()
-        {
-            new Uri("pack://application:,,,/Resources/StepNo.png"),
-            new Uri("pack://application:,,,/Resources/StepYes.png")
-        };
-
-        private Uri GetImageStepUri(int step)
-        {
-            return new Uri($"pack://application:,,,/Resources/Step{step}.jpg");
-        }
-
-        private int frameCount = 0;
         private string lastFramePath;
 
-        private int currentModel = 1; // 0 --> 01234 / 1 --> 56 / 2 --> 7
-        private int currentStep = 5;
+        private int frameCount = 0;
 
-        private int currentHelp = 0;
-        private int currentError = 0;
+        private int currentStep = 0; // 01234567
+
+        private int currentModel = 0; // 0 --> 01234 / 1 --> 56 / 2 --> 7
+
+        private int currentHelpMessage = 0;
 
         private Action<VideoFrame> UpdateImage(Image image)
         {
@@ -133,61 +76,165 @@ namespace YWIL_YouWorkItLooks
 
             SaveStreamAsPngFile(stream, capturingFlag);
 
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
+            string result = await ModelInference(CommonSteps.ModelFolders[currentModel]);
 
-            string result = await ModelInference(modelFolders[currentModel]);
-
-            stopwatch.Stop();
-            int inferenceTime = (int)stopwatch.ElapsedMilliseconds;
+            stepReferenceImage.Source = new BitmapImage(CommonSteps.GetImageStepUri(currentStep));
 
             switch (currentModel)
             {
                 case 0:
                     List<Classification> multilabel = JsonConvert.DeserializeObject<List<Classification>>(result);
-                    ShowWindowsMessages(multilabel, inferenceTime);
+                    ProcessMultilabelResult(multilabel);
                     break;
                 case 1:
-                    List<Detection> objectDetection = JsonConvert.DeserializeObject<List<Detection>>(result);
-                    ShowAllDetectionBoxes(objectDetection, inferenceTime);
+                    List<Detection> detection = JsonConvert.DeserializeObject<List<Detection>>(result);
+                    ProcessDetectionResult(detection);
                     break;
                 case 2:
-                    ClearDetectionBoxes();
                     List<Classification> multiclass = JsonConvert.DeserializeObject<List<Classification>>(result);
-                    ShowWindowsMessages(multiclass, inferenceTime);
+                    ProcessMulticlassResult(multiclass);
                     break;
                 default:
                     break;
             }
-
-            stepReferenceImage.Source = new BitmapImage(GetImageStepUri(currentStep));
         }
 
-        private void ShowWindowsMessages<T>(List<T> items, int milliseconds, bool error = false) where T : Classification
+        private void ShowWindowMessages<T>(string message, List<T> items) where T : Classification
         {
-            string helpMessage = string.Empty;
+            string stepInfo;
 
-            string stepInfo = "Current step detections:" + Environment.NewLine;
-
-            foreach (T item in items)
+            if (items.Any())
             {
-                stepInfo += Environment.NewLine + " " + item.PredictionToString();
-            }
+                stepInfo = $"Step #{currentStep}. Current detections:" + Environment.NewLine;
 
-            if (error)
-            {
-                helpMessage += errorMessages[currentError].ToUpper();
+                foreach (T item in items)
+                {
+                    stepInfo += Environment.NewLine + " " + item.PredictionToString();
+                }
             }
             else
             {
-                helpMessage += helpMessages[currentHelp].ToUpper();
+                stepInfo = $"Step #{currentStep}. No objects detected." + Environment.NewLine;
             }
 
-            helpMessageTextBlock.Text = helpMessage;
+            helpMessageTextBlock.Text = message.ToUpper();
 
             stepInfoTextBlock.Text = stepInfo;
+        }
 
-            inferenceTextBlock.Text = "Last inference took " + milliseconds + "ms";
+        private void ShowWindowChecking(int checkingValue)
+        {
+            stepChekingImage.Source = new BitmapImage(CommonSteps.StepCheckingUris[checkingValue]);
+
+            stepBackground.Background = (SolidColorBrush)new BrushConverter().ConvertFrom(CommonSteps.StepCheckingColors[checkingValue]);
+        }
+
+        private void ProcessMultilabelResult(IEnumerable<Classification> classificationLabels)
+        {
+            string message = DetectionSteps.DetectionHelpMessages[currentHelpMessage];
+
+            IEnumerable<Classification> selectedDetections = classificationLabels
+                .Where(x => x.Label.Contains(currentStep.ToString()));
+
+            int checkingValue = 2;
+
+            if (currentHelpMessage != 0)
+            {
+                if (selectedDetections.Select(x => x.Label).Contains(MultilabelSteps.MultilabelLabels[5]))
+                {
+                    checkingValue = 0;
+
+                    message = MultilabelSteps.MultilabelErrorMessages[0];
+                }
+                else if (selectedDetections.Any())
+                {
+                    checkingValue = 1;
+                }
+            }
+
+            ShowWindowChecking(checkingValue);
+
+            ShowWindowMessages(message, classificationLabels.ToList());
+
+            if (currentHelpMessage == 0)
+            {
+                currentHelpMessage++;
+            }
+
+            if (currentHelpMessage == DetectionSteps.DetectionHelpMessages.Count - 1)
+            {
+                currentStep++;
+
+                currentHelpMessage = 0;
+
+                currentModel++;
+            }
+        }
+
+        private void ProcessDetectionResult(IEnumerable<Detection> detectedObjects)
+        {
+            string message = DetectionSteps.DetectionHelpMessages[currentHelpMessage];
+
+            IEnumerable<Detection> selectedDetections = detectedObjects
+                .Where(x => x.Label.Contains(currentStep.ToString()))
+                .OrderBy(x => x.Label);
+
+            int checkingValue = 2;
+
+            if (currentHelpMessage != 0)
+            {
+                ClearDetectionBoxes();
+
+                if (selectedDetections.Select(x => x.Label).Contains(DetectionSteps.DetectionLabels[2]))
+                {
+                    checkingValue = 0;
+
+                    message = DetectionSteps.DetectionErrorMessages[0];
+
+                    ShowObjectDetectionBox(selectedDetections.Where(x => x.Label.Contains("error")).FirstOrDefault());
+                }
+                else if (selectedDetections.Any())
+                {
+                    checkingValue = 1;
+
+                    foreach (Detection detection in selectedDetections)
+                    {
+                        ShowObjectDetectionBox(detection);
+                    }
+                }
+            }
+
+            ShowWindowChecking(checkingValue);
+
+            ShowWindowMessages(message, detectedObjects.ToList());
+
+            if (currentHelpMessage == 0)
+            {
+                currentHelpMessage++;
+            }
+
+            if (selectedDetections.Count(x => x.Label.Contains(DetectionSteps.DetectionLabels[1])) == 4)
+            {
+                currentHelpMessage++;
+
+                currentStep++;
+            }
+
+            if (selectedDetections.Select(x => x.Label).Contains(DetectionSteps.DetectionLabels[4]))
+            {
+                currentHelpMessage++;
+            }
+
+            if (currentHelpMessage == DetectionSteps.DetectionHelpMessages.Count - 1)
+            {
+                ClearDetectionBoxes();
+
+                currentStep++;
+
+                currentHelpMessage = 0;
+
+                currentModel++;
+            }
         }
 
         private void ClearDetectionBoxes()
@@ -195,57 +242,9 @@ namespace YWIL_YouWorkItLooks
             objectDetectionCanvas.Children.Clear();
         }
 
-        private void ShowAllDetectionBoxes(IEnumerable<Detection> detectedObjects, int milliseconds)
-        {
-            ClearDetectionBoxes();
-
-            IEnumerable<Detection> selectedDetections = detectedObjects.Where(x => x.Label.Contains(currentStep.ToString()));
-
-            bool error = false;
-
-            if (selectedDetections.Select(x => x.Label).Contains("Step5.error"))
-            {
-                stepChekingImage.Source = new BitmapImage(stepCheckingUris[0]);
-                error = true;
-            }
-            else
-            {
-                stepChekingImage.Source = new BitmapImage(stepCheckingUris[1]);
-            }
-
-            if (error)
-            {
-                ShowObjectDetectionBox(selectedDetections.Where(x => x.Label.Contains("error")).FirstOrDefault());
-            }
-            else
-            {
-                foreach (Detection detection in selectedDetections)
-                {
-                    ShowObjectDetectionBox(detection);
-                }
-            }
-
-            if (selectedDetections.Count(x => x.Label.Contains("Step5.part")) > 3)
-            {
-                currentStep++;
-                currentHelp++;
-            }
-
-            if (selectedDetections.Select(x => x.Label).Contains("Step6.part"))
-            {
-                currentStep++;
-                currentModel++;
-                currentHelp++;
-            }
-
-            ShowWindowsMessages(detectedObjects.ToList(), milliseconds, error);
-        }
-
         private void ShowObjectDetectionBox(Detection detectedObject)
         {
             double canvasSide = 480;
-
-            float probability = float.Parse(detectedObject.Probability);
 
             Color color;
             int thick;
@@ -282,23 +281,25 @@ namespace YWIL_YouWorkItLooks
         private async Task<string> ModelInference(string modelFolder)
         {
             string workingDir = @$"{System.IO.Directory.GetCurrentDirectory()}\{modelFolder}";
-            ProcessStartInfo startInfo = new ProcessStartInfo();
-            startInfo.WorkingDirectory = workingDir;
-            startInfo.FileName = "cmd.exe";
-            startInfo.Arguments = $"/C py script.py -i {lastFramePath}";
-            startInfo.UseShellExecute = false;
-            startInfo.RedirectStandardOutput = true;
-            startInfo.RedirectStandardError = true;
-            startInfo.CreateNoWindow = true;
+
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                WorkingDirectory = workingDir,
+                FileName = "cmd.exe",
+                Arguments = $"/C py script.py -i {lastFramePath}",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
 
             string result = string.Empty;
 
             using (Process process = Process.Start(startInfo))
             {
-                using (System.IO.StreamReader reader = process.StandardOutput)
-                {
-                    result = await reader.ReadToEndAsync();
-                }
+                using System.IO.StreamReader reader = process.StandardOutput;
+
+                result = await reader.ReadToEndAsync();
             }
 
             return result;
@@ -345,31 +346,26 @@ namespace YWIL_YouWorkItLooks
 
             lastFramePath = filePath;
 
-            using (System.IO.FileStream outputFileStream = new System.IO.FileStream(filePath, System.IO.FileMode.Create))
-            {
-                inputStream.CopyTo(outputFileStream);
-            }
+            using System.IO.FileStream outputFileStream = new System.IO.FileStream(filePath, System.IO.FileMode.Create);
+
+            inputStream.CopyTo(outputFileStream);
         }
 
         public MainWindow()
         {
             InitializeComponent();
 
-            stepReferenceImage.Source = new BitmapImage(GetImageStepUri(4));
-
             try
             {
-                Action<VideoFrame> updateColor;
-
-                pipeline = new Pipeline();
-
                 Config config = new Config();
 
                 config.EnableStream(Stream.Color, frameWidth, frameHeight, Format.Rgb8, frameRate);
 
+                pipeline = new Pipeline();
+
                 PipelineProfile profile = pipeline.Start(config);
 
-                SetupWindow(profile, out updateColor);
+                SetupWindow(profile, out Action<VideoFrame> updateColor);
 
                 SoftwareDevice device = new SoftwareDevice();
 
@@ -408,7 +404,7 @@ namespace YWIL_YouWorkItLooks
                         {
                             VideoFrame colorFrame = frames.ColorFrame.DisposeWith(frames);
 
-                            colorData = colorData ?? new byte[colorFrame.Stride * colorFrame.Height];
+                            colorData ??= new byte[colorFrame.Stride * colorFrame.Height];
 
                             colorFrame.CopyTo(colorData);
 

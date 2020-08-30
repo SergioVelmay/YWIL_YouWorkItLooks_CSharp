@@ -18,22 +18,20 @@
         </Grid>
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="60" />
+                <RowDefinition Height="100" />
                 <RowDefinition Height="160" />
                 <RowDefinition Height="220" />
-                <RowDefinition Height="40" />
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" x:Name="helpMessageTextBlock" Height="60" Width="320" Background="Black" Foreground="White" FontSize="21" Padding="0 15 " TextAlignment="Center" TextWrapping="Wrap"></TextBlock>
-            <Grid Grid.Row="1">
+            <TextBlock Grid.Row="0" x:Name="helpMessageTextBlock" Height="100"  Background="Black" Foreground="White" FontWeight="Bold" FontSize="21" Padding="10 20" TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap">ROTATE THE GEAR A BIT UNTIL IT FITS PROPERLY</TextBlock>
+            <Grid Grid.Row="1" x:Name="stepBackground">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="160" />
                     <ColumnDefinition Width="160" />
                 </Grid.ColumnDefinitions>
                 <Image Grid.Column="0" x:Name="stepChekingImage" Height="120" Width="120" Margin="20"/>
-                <Image Grid.Column="1" x:Name="stepReferenceImage" Height="160" Width="160"/>
+                <Image Grid.Column="1" x:Name="stepReferenceImage" Height="140" Width="140" Margin="10"/>
             </Grid>
-            <TextBlock Grid.Row="2" x:Name="stepInfoTextBlock" Width="320" Foreground="Black" FontSize="18" Padding="18" TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"></TextBlock>
-            <TextBlock Grid.Row="3" x:Name="inferenceTextBlock" Height="40" Width="320" Background="Black" Foreground="White" FontSize="18" Padding="0 6" TextAlignment="Center" TextWrapping="Wrap"></TextBlock>
+            <TextBlock Grid.Row="2" x:Name="stepInfoTextBlock" Width="320" FontSize="18" Padding="18" TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"></TextBlock>
         </Grid>
         
         
