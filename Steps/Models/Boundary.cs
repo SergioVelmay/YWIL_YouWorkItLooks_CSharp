@@ -1,4 +1,4 @@
-﻿namespace YWIL_YouWorkItLooks
+﻿namespace YWIL_YouWorkItLooks.Steps.Models
 {
     public class Boundary
     {
