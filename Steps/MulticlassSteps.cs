@@ -14,7 +14,9 @@ namespace YWIL_YouWorkItLooks.Steps
 
         public static readonly List<string> MulticlassHelpMessages = new List<string>()
         {
-            "Place the gray gear on top of the mechanism"
+            "Multiclass classification for step 7 ready",
+            "Place the gray gear on top of the mechanism",
+            "Very good job, human! Assembly completed!"
         };
 
         public static readonly List<string> MulticlassErrorMessages = new List<string>()
