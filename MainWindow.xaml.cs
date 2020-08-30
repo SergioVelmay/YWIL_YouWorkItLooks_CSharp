@@ -131,10 +131,9 @@ namespace YWIL_YouWorkItLooks
 
         private void ProcessMultilabelResult(IEnumerable<Classification> classificationLabels)
         {
-            string message = DetectionSteps.DetectionHelpMessages[currentHelpMessage];
+            string message = MultilabelSteps.MultilabelHelpMessages[currentHelpMessage];
 
-            IEnumerable<Classification> selectedDetections = classificationLabels
-                .Where(x => x.Label.Contains(currentStep.ToString()));
+            IEnumerable<Classification> selectedDetections = classificationLabels;
 
             int checkingValue = 2;
 
@@ -149,6 +148,16 @@ namespace YWIL_YouWorkItLooks
                 else if (selectedDetections.Any())
                 {
                     checkingValue = 1;
+
+                    foreach (string label in selectedDetections.Select(x => x.Label))
+                    {
+                        if (label.Contains(currentStep.ToString()))
+                        {
+                            currentStep++;
+
+                            currentHelpMessage++;
+                        }
+                    }
                 }
             }
 
@@ -161,10 +170,8 @@ namespace YWIL_YouWorkItLooks
                 currentHelpMessage++;
             }
 
-            if (currentHelpMessage == DetectionSteps.DetectionHelpMessages.Count - 1)
+            if (currentHelpMessage == MultilabelSteps.MultilabelHelpMessages.Count - 1)
             {
-                currentStep++;
-
                 currentHelpMessage = 0;
 
                 currentModel++;
@@ -176,8 +183,7 @@ namespace YWIL_YouWorkItLooks
             string message = DetectionSteps.DetectionHelpMessages[currentHelpMessage];
 
             IEnumerable<Detection> selectedDetections = detectedObjects
-                .Where(x => x.Label.Contains(currentStep.ToString()))
-                .OrderBy(x => x.Label);
+                .Where(x => x.Label.Contains(currentStep.ToString()));
 
             int checkingValue = 2;
 
@@ -234,6 +240,51 @@ namespace YWIL_YouWorkItLooks
                 currentHelpMessage = 0;
 
                 currentModel++;
+            }
+        }
+
+        private void ProcessMulticlassResult(IEnumerable<Classification> classificationLabels)
+        {
+            string message = MulticlassSteps.MulticlassHelpMessages[currentHelpMessage];
+
+            Classification selectedDetection = classificationLabels.FirstOrDefault();
+
+            int checkingValue = 1;
+
+            if (currentHelpMessage != 0 && currentHelpMessage != MulticlassSteps.MulticlassHelpMessages.Count -1)
+            {
+                if (selectedDetection != null)
+                {
+                    if (selectedDetection.Label.Equals(MulticlassSteps.MulticlassLabels[2]))
+                    {
+                        checkingValue = 0;
+
+                        message = MulticlassSteps.MulticlassErrorMessages[0];
+                    }
+                    else if (selectedDetection.Label.Equals(MulticlassSteps.MulticlassLabels[3]))
+                    {
+                        checkingValue = 0;
+
+                        message = MulticlassSteps.MulticlassErrorMessages[1];
+                    }
+                    else if (selectedDetection.Label.Equals(MulticlassSteps.MulticlassLabels[1]))
+                    {
+                        currentHelpMessage++;
+                    }
+                }
+                else
+                {
+                    checkingValue = 2;
+                }
+            }
+
+            ShowWindowChecking(checkingValue);
+
+            ShowWindowMessages(message, classificationLabels.ToList());
+
+            if (currentHelpMessage == 0)
+            {
+                currentHelpMessage++;
             }
         }
 
