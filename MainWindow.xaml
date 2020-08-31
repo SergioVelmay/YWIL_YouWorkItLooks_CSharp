@@ -22,19 +22,16 @@
                 <RowDefinition Height="160" />
                 <RowDefinition Height="220" />
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" x:Name="helpMessageTextBlock" Height="100"  Background="Black" Foreground="White" FontWeight="Bold" FontSize="21" Padding="10 20" TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap">YWIL - YOU WORK, IT LOOKS. LET'S START THE ASSEMBLY.</TextBlock>
-            <Grid Grid.Row="1" x:Name="stepBackground">
+            <TextBlock Grid.Row="0" x:Name="helpMessageTextBlock" Height="100" Background="Black" Foreground="White" FontWeight="Bold" FontSize="21" Padding="10 20" TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap">YWIL - YOU WORK, IT LOOKS. LET'S START THE ASSEMBLY!</TextBlock>
+            <Grid Grid.Row="1" x:Name="stepBackground" Background="#868686">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="160" />
                     <ColumnDefinition Width="160" />
                 </Grid.ColumnDefinitions>
-                <Image Grid.Column="0" x:Name="stepChekingImage" Height="120" Width="120" Margin="20"/>
+                <Image Grid.Column="0" x:Name="stepChekingImage" Height="120" Width="120" Margin="25 20 15 20"/>
                 <Image Grid.Column="1" x:Name="stepReferenceImage" Height="140" Width="140" Margin="10"/>
             </Grid>
-            <TextBlock Grid.Row="2" x:Name="stepInfoTextBlock" Width="320" FontSize="18" Padding="18" TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"></TextBlock>
+            <TextBlock Grid.Row="2" x:Name="stepInfoTextBlock" Height="220" Width="320" Background="Black" Foreground="White" FontSize="18" Padding="18" TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"></TextBlock>
         </Grid>
-        
-        
-        
     </Grid>
 </Window>
