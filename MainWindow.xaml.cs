@@ -49,6 +49,106 @@ namespace YWIL_YouWorkItLooks
 
         private int currentHelpMessage = 0;
 
+        public MainWindow()
+        {
+            InitializeComponent();
+
+            try
+            {
+                Config config = new Config();
+
+                config.EnableStream(Stream.Color, frameWidth, frameHeight, Format.Rgb8, frameRate);
+
+                pipeline = new Pipeline();
+
+                PipelineProfile profile = pipeline.Start(config);
+
+                SetupWindow(profile, out Action<VideoFrame> updateColor);
+
+                SoftwareDevice device = new SoftwareDevice();
+
+                SoftwareSensor colorSensor = device.AddSensor("Color");
+
+                VideoStreamProfile colorProfile = colorSensor.AddVideoStream(new SoftwareVideoStream
+                {
+                    type = Stream.Color,
+                    index = 0,
+                    uid = 101,
+                    width = frameWidth,
+                    height = frameHeight,
+                    fps = frameRate,
+                    bpp = 3,
+                    format = Format.Rgb8,
+                    intrinsics = profile.GetStream(Stream.Color).As<VideoStreamProfile>().GetIntrinsics()
+                });
+
+                device.SetMatcher(Matchers.Default);
+
+                Syncer syncer = new Syncer();
+
+                colorSensor.Open(colorProfile);
+
+                colorSensor.Start(syncer.SubmitFrame);
+
+                CancellationToken token = tokenSource.Token;
+
+                byte[] colorData = null;
+
+                Task task = Task.Factory.StartNew(() =>
+                {
+                    while (!token.IsCancellationRequested)
+                    {
+                        using (FrameSet frames = pipeline.WaitForFrames())
+                        {
+                            VideoFrame colorFrame = frames.ColorFrame.DisposeWith(frames);
+
+                            colorData ??= new byte[colorFrame.Stride * colorFrame.Height];
+
+                            colorFrame.CopyTo(colorData);
+
+                            colorSensor.AddVideoFrame(
+                                colorData,
+                                colorFrame.Stride,
+                                colorFrame.BitsPerPixel / 8,
+                                colorFrame.Timestamp,
+                                colorFrame.TimestampDomain,
+                                (int)colorFrame.Number,
+                                colorProfile
+                            );
+                        }
+
+                        using (FrameSet newFrames = syncer.WaitForFrames())
+                        {
+                            VideoFrame colorFrame = newFrames.ColorFrame.DisposeWith(newFrames);
+
+                            Dispatcher.Invoke(DispatcherPriority.Render, updateColor, colorFrame);
+                        }
+                    }
+                }, token);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+
+                Application.Current.Shutdown();
+            }
+        }
+
+        private void ControlClosing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            tokenSource.Cancel();
+        }
+
+        private void SetupWindow(PipelineProfile pipelineProfile, out Action<VideoFrame> color)
+        {
+            using (VideoStreamProfile stream = pipelineProfile.GetStream(Stream.Color).As<VideoStreamProfile>())
+            {
+                colorRealSenseImage.Source = new WriteableBitmap(stream.Width, stream.Height, 96d, 96d, PixelFormats.Rgb24, null);
+            }
+
+            color = UpdateImage(colorRealSenseImage);
+        }
+
         private Action<VideoFrame> UpdateImage(Image image)
         {
             WriteableBitmap bitmap = image.Source as WriteableBitmap;
@@ -297,29 +397,29 @@ namespace YWIL_YouWorkItLooks
         {
             double canvasSide = 480;
 
-            Color color;
+            SolidColorBrush color;
             int thick;
 
             if (detectedObject.Label.Contains("error"))
             {
-                color = Colors.OrangeRed;
+                color = (SolidColorBrush)new BrushConverter().ConvertFrom(CommonSteps.StepCheckingColors[0]);
                 thick = 6;
             }
             else if (detectedObject.Label.Contains("hole"))
             {
-                color = Colors.White;
+                color = new SolidColorBrush(Colors.White);
                 thick = 2;
             }
             else
             { 
-                color = Colors.Lime;
+                color = (SolidColorBrush)new BrushConverter().ConvertFrom(CommonSteps.StepCheckingColors[1]);
                 thick = 4;
             }
 
             objectDetectionCanvas.Children.Add(
                 new Border
                 {
-                    BorderBrush = new SolidColorBrush(color),
+                    BorderBrush = color,
                     BorderThickness = new Thickness(thick),
                     Margin = new Thickness(detectedObject.Box.Left * canvasSide + cropLeft,
                                             detectedObject.Box.Top * canvasSide, 0, 0),
@@ -400,106 +500,6 @@ namespace YWIL_YouWorkItLooks
             using System.IO.FileStream outputFileStream = new System.IO.FileStream(filePath, System.IO.FileMode.Create);
 
             inputStream.CopyTo(outputFileStream);
-        }
-
-        public MainWindow()
-        {
-            InitializeComponent();
-
-            try
-            {
-                Config config = new Config();
-
-                config.EnableStream(Stream.Color, frameWidth, frameHeight, Format.Rgb8, frameRate);
-
-                pipeline = new Pipeline();
-
-                PipelineProfile profile = pipeline.Start(config);
-
-                SetupWindow(profile, out Action<VideoFrame> updateColor);
-
-                SoftwareDevice device = new SoftwareDevice();
-
-                SoftwareSensor colorSensor = device.AddSensor("Color");
-
-                VideoStreamProfile colorProfile = colorSensor.AddVideoStream(new SoftwareVideoStream
-                {
-                    type = Stream.Color,
-                    index = 0,
-                    uid = 101,
-                    width = frameWidth,
-                    height = frameHeight,
-                    fps = frameRate,
-                    bpp = 3,
-                    format = Format.Rgb8,
-                    intrinsics = profile.GetStream(Stream.Color).As<VideoStreamProfile>().GetIntrinsics()
-                });
-
-                device.SetMatcher(Matchers.Default);
-
-                Syncer syncer = new Syncer();
-
-                colorSensor.Open(colorProfile);
-
-                colorSensor.Start(syncer.SubmitFrame);
-
-                CancellationToken token = tokenSource.Token;
-
-                byte[] colorData = null;
-
-                Task task = Task.Factory.StartNew(() =>
-                {
-                    while (!token.IsCancellationRequested)
-                    {
-                        using (FrameSet frames = pipeline.WaitForFrames())
-                        {
-                            VideoFrame colorFrame = frames.ColorFrame.DisposeWith(frames);
-
-                            colorData ??= new byte[colorFrame.Stride * colorFrame.Height];
-
-                            colorFrame.CopyTo(colorData);
-
-                            colorSensor.AddVideoFrame(
-                                colorData,
-                                colorFrame.Stride,
-                                colorFrame.BitsPerPixel / 8,
-                                colorFrame.Timestamp,
-                                colorFrame.TimestampDomain,
-                                (int)colorFrame.Number,
-                                colorProfile
-                            );
-                        }
-
-                        using (FrameSet newFrames = syncer.WaitForFrames())
-                        {
-                            VideoFrame colorFrame = newFrames.ColorFrame.DisposeWith(newFrames);
-
-                            Dispatcher.Invoke(DispatcherPriority.Render, updateColor, colorFrame);
-                        }
-                    }
-                }, token);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-
-                Application.Current.Shutdown();
-            }
-        }
-
-        private void ControlClosing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            tokenSource.Cancel();
-        }
-
-        private void SetupWindow(PipelineProfile pipelineProfile, out Action<VideoFrame> color)
-        {
-            using (VideoStreamProfile stream = pipelineProfile.GetStream(Stream.Color).As<VideoStreamProfile>())
-            {
-                colorRealSenseImage.Source = new WriteableBitmap(stream.Width, stream.Height, 96d, 96d, PixelFormats.Rgb24, null);
-            }
-
-            color = UpdateImage(colorRealSenseImage);
         }
     }
 }
