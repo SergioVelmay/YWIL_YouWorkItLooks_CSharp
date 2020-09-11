@@ -14,7 +14,10 @@ namespace YWIL_YouWorkItLooks.Steps
             "false",
             "Step4",
             "front",
-            "back"
+            "back",
+            "Step7",
+            "right",
+            "wrong"
         };
 
         public static readonly List<string> MultilabelHelpMessages = new List<string>()
@@ -30,7 +33,8 @@ namespace YWIL_YouWorkItLooks.Steps
 
         public static readonly List<string> MultilabelErrorMessages = new List<string>()
         {
-            "Flip the pink part, it is placed backwards"
+            "Flip the pink part, it is placed backwards",
+            "Remove the previous assembly from the base"
         };
     }
 }
