@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\AssemblyCompleted.png" />
     <None Remove="Resources\Step0.jpg" />
     <None Remove="Resources\Step1.jpg" />
     <None Remove="Resources\Step2.jpg" />
@@ -18,6 +19,7 @@
     <None Remove="Resources\Step7.jpg" />
     <None Remove="Resources\StepArrow.png" />
     <None Remove="Resources\StepNo.png" />
+    <None Remove="Resources\StepPause.png" />
     <None Remove="Resources\StepYes.png" />
   </ItemGroup>
 
@@ -27,6 +29,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Resources\AssemblyCompleted.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
     <Resource Include="Resources\Step0.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
@@ -55,6 +60,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Resources\StepNo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\StepPause.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Resources\StepYes.png">
