@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -36,6 +37,8 @@ namespace YWIL_YouWorkItLooks
         private Int32Rect region = new Int32Rect((frameWidth - frameHeight) / 2, 0, frameHeight, frameHeight);
 
         private readonly double scale = 416d / frameHeight;
+
+        private bool assemblyCompleted = false;
 
         private const bool capturingFlag = false;
 
@@ -157,11 +160,14 @@ namespace YWIL_YouWorkItLooks
             {
                 bitmap.WritePixels(rect, frame.Data, frame.Stride * frame.Height, frame.Stride);
 
-                frameCount++;
-
-                if (frameCount % imageEach == 0)
+                if (!assemblyCompleted)
                 {
-                    _ = ProcessBitmapFrame(bitmap);
+                    frameCount++;
+
+                    if (frameCount % imageEach == 0)
+                    {
+                        _ = ProcessBitmapFrame(bitmap);
+                    }
                 }
             });
         }
@@ -205,16 +211,15 @@ namespace YWIL_YouWorkItLooks
 
             if (items.Any())
             {
-                stepInfo = $"Step #{currentStep}. Current detections:" + Environment.NewLine;
-
+                stepInfo = $"Current detections in Step #{currentStep}:" + Environment.NewLine;
                 foreach (T item in items)
                 {
-                    stepInfo += Environment.NewLine + " " + item.PredictionToString();
+                    stepInfo += Environment.NewLine + item.PredictionToString();
                 }
             }
             else
             {
-                stepInfo = $"Step #{currentStep}. No objects detected." + Environment.NewLine;
+                stepInfo = $"No objects detected in Step #{currentStep}." + Environment.NewLine;
             }
 
             helpMessageTextBlock.Text = message.ToUpper();
@@ -227,6 +232,23 @@ namespace YWIL_YouWorkItLooks
             stepChekingImage.Source = new BitmapImage(CommonSteps.StepCheckingUris[checkingValue]);
 
             stepBackground.Background = (SolidColorBrush)new BrushConverter().ConvertFrom(CommonSteps.StepCheckingColors[checkingValue]);
+        }
+
+        private void ShowWindowProgress()
+        {
+            Grid stepGrid = FindName($"step{currentStep}Back") as Grid;
+            stepGrid.Background = (SolidColorBrush)new BrushConverter().ConvertFrom(CommonSteps.StepCheckingColors[1]);
+
+            Image stepPrev = FindName($"step{currentStep}Check") as Image;
+            stepPrev.Source = new BitmapImage(CommonSteps.StepCheckingUris[1]);
+
+            currentStep++;
+
+            Image stepImage = FindName($"step{currentStep}Image") as Image;
+            stepImage.Opacity = 1.0;
+
+            Image stepCheck = FindName($"step{currentStep}Check") as Image;
+            stepCheck.Source = new BitmapImage(CommonSteps.StepCheckingUris[3]);
         }
 
         private void ProcessMultilabelResult(IEnumerable<Classification> classificationLabels)
@@ -245,6 +267,14 @@ namespace YWIL_YouWorkItLooks
 
                     message = MultilabelSteps.MultilabelErrorMessages[0];
                 }
+                else if (currentHelpMessage == 1 &&
+                    (selectedDetections.Select(x => x.Label).Contains(MultilabelSteps.MultilabelLabels[6]) ||
+                     selectedDetections.Select(x => x.Label).Contains(MultilabelSteps.MultilabelLabels[9])))
+                {
+                    checkingValue = 0;
+
+                    message = MultilabelSteps.MultilabelErrorMessages[1];
+                }
                 else if (selectedDetections.Any())
                 {
                     checkingValue = 1;
@@ -253,7 +283,7 @@ namespace YWIL_YouWorkItLooks
                     {
                         if (label.Contains(currentStep.ToString()))
                         {
-                            currentStep++;
+                            ShowWindowProgress();
 
                             currentHelpMessage++;
                         }
@@ -268,6 +298,10 @@ namespace YWIL_YouWorkItLooks
             if (currentHelpMessage == 0)
             {
                 currentHelpMessage++;
+                
+                step0Image.Opacity = 1.0;
+
+                step0Check.Source = new BitmapImage(CommonSteps.StepCheckingUris[3]);
             }
 
             if (currentHelpMessage == MultilabelSteps.MultilabelHelpMessages.Count - 1)
@@ -323,29 +357,48 @@ namespace YWIL_YouWorkItLooks
             {
                 currentHelpMessage++;
 
-                currentStep++;
+                ShowWindowProgress();
             }
 
             if (selectedDetections.Select(x => x.Label).Contains(DetectionSteps.DetectionLabels[4]))
             {
+                if (currentHelpMessage == DetectionSteps.DetectionHelpMessages.Count - 1)
+                {
+                    ClearDetectionBoxes();
+
+                    ShowWindowProgress();
+
+                    currentHelpMessage = 0;
+
+                    currentModel++;
+                }
+
                 currentHelpMessage++;
-            }
-
-            if (currentHelpMessage == DetectionSteps.DetectionHelpMessages.Count - 1)
-            {
-                ClearDetectionBoxes();
-
-                currentStep++;
-
-                currentHelpMessage = 0;
-
-                currentModel++;
             }
         }
 
         private void ProcessMulticlassResult(IEnumerable<Classification> classificationLabels)
         {
-            string message = MulticlassSteps.MulticlassHelpMessages[currentHelpMessage];
+            string message;
+
+            if (currentHelpMessage < MulticlassSteps.MulticlassHelpMessages.Count)
+            {
+                message = MulticlassSteps.MulticlassHelpMessages[currentHelpMessage];
+            }
+            else
+            {
+                message = MulticlassSteps.MulticlassHelpMessages.Last();
+
+                assemblyCompleted = true;
+
+                assemblyCompletedImage.Opacity = 1.0;
+
+                currentHelpMessage = 0;
+
+                currentStep = 0;
+
+                currentModel = 0;
+            }
 
             Classification selectedDetection = classificationLabels.FirstOrDefault();
 
@@ -384,6 +437,15 @@ namespace YWIL_YouWorkItLooks
 
             if (currentHelpMessage == 0)
             {
+                currentHelpMessage++;
+            }
+
+            if (currentHelpMessage == MulticlassSteps.MulticlassHelpMessages.Count - 1)
+            {
+                step7Back.Background = (SolidColorBrush)new BrushConverter().ConvertFrom(CommonSteps.StepCheckingColors[1]);
+
+                step7Check.Source = new BitmapImage(CommonSteps.StepCheckingUris[1]);
+
                 currentHelpMessage++;
             }
         }
